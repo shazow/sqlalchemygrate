@@ -4,7 +4,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def table_migrate(e1, e2, table, convert_fn=None, limit=100000):
+def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
+    table2 = table2 or table
+
     count = e1.execute(table.count()).scalar()
 
     log.debug("Inserting {0} rows into: {1}".format(count, table.name))
@@ -16,8 +18,8 @@ def table_migrate(e1, e2, table, convert_fn=None, limit=100000):
         if convert_fn:
             data = [convert_fn(table, row) for row in data]
 
-        e2.execute(table.insert(), data)
-        log.debug("-> Inserted {0} rows into: {1}".format(len(data), table.name))
+        e2.execute(table2.insert(), data)
+        log.debug("-> Inserted {0} rows into: {1}".format(len(data), table2.name))
 
 
 def migrate(e1, e2, metadata, convert_fn=None, only_tables=None, skip_tables=None, limit=100000):

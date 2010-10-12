@@ -1,8 +1,10 @@
-# SQLAlcheMyGrate
+# SQLAlchemyGrate SQLAlcheMygrate SQLAlcheMyGrate
 
-This is my silly (yet effective) migration framework built on [SQLAlchemy](http://sqlalchemy.org/)—the best database abstraction library in the universe. Grate doesn't do fancy things like track schema versions and do step-through upgrade/downgrade paths or testing. Buuut, you can create a wrapper around it to do all these things using the 'upgrade' command.
+This is my silly (yet effective) migration framework built on [SQLAlchemy](http://sqlalchemy.org/)—the best database abstraction library in the universe. Grate doesn't do fancy things like track schema versions and do step-through upgrade/downgrade paths or testing. Buuut, you can create a wrapper around it to do all these things using the ``upgrade`` command.
 
 One thing grate does well out of the box is a stupid row-by-row re-insert from one SQLAlchemy target engine to another. This means you can make changes to your SQLAlchemy schema as you please, then to port your data you create another database and do a row-by-row re-insert from the old dataset into the new. You can even provide a conversion function that will transform the data when necessary.
+
+**Warning*: Consider this beta quality. There is a lack of error checking so you may get rogue exceptions raised. More features and helpers are being added.*
 
 ## Usage
 
@@ -82,6 +84,12 @@ When performing an upgrade command, you can do in-place changes without a full r
 
     # migration/001_change_fancy_column.py:
 
+    from sqlalchemy import *
+    from migrate import * # sqlalchemy-migrate lets us do dialect-agnostic schema changes
+
+    # sqlalchemygrate also provides some helpers just in case
+    from grate.migrations import table_migrate
+
     def upgrade(metadata):
         """
         :param metadata: SQLAlchemy MetaData bound to an engine and autoreflected.
@@ -92,6 +100,9 @@ When performing an upgrade command, you can do in-place changes without a full r
         # ... Do stuff with fancy_table
 
         metadata.bind.execute(...)
+
+        # Need to do a row-by-row re-insert? Use the table_migrate helper
+        table_migrate(e1, e1, table, renamed_table, convert_fn=my_fn, limit=100000)
 
     def downgrade(metadata):
         # TODO: Same idea, but backwards!
