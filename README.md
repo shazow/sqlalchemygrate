@@ -118,4 +118,30 @@ And now we can upgrade and downgrade our schema, for example:
 
 Maybe this should be called something other than ``upgrade``? Perhaps ``grade``? Anyways...
 
+
+## Performance Notes
+
+### Row-by-row re-insert (migrate)
+
+Thousands of rows takes seconds, millions of rows takes minutes. The details are dependent on the schema, server, and specific numbers.
+
+### In-place schema changes (upgrade)
+
+If you're not doing a full re-insert, this is about as efficient as you can get with any other schema migration tool. Typically on the order of seconds.
+
+
+# Questions? Want to contribute?
+
+* You can email me at andrey.petrov@shazow.net
+* Tweet me at [@shazow](http://twitter.com/shazow)
+* [Open an issue](http://github.com/shazow/sqlalchemygrate/issues) or make a forks are welcome too. :D
+
+
+# TODO
+
+* More concrete examples (fill out the code TODOs)
+* More helpers for common migration operations
+* Build a wrapper around grate to handle revision tracking and step-through upgrade procedures like most mainstream migration frameworks.
+
+
 # ISN'T THIS GRATE?
