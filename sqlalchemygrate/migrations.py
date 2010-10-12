@@ -14,7 +14,7 @@ def table_migrate(e1, e2, table, convert_fn=None, limit=100000):
                continue
 
         if convert_fn:
-            data = [convert_fn(table.name, row) for row in data]
+            data = [convert_fn(table, row) for row in data]
 
         e2.execute(table.insert(), data)
         log.debug("-> Inserted {0} rows into: {1}".format(len(data), table.name))

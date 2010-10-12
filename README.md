@@ -4,7 +4,7 @@ This is my silly (yet effective) migration framework built on SQLAlchemy. It doe
 
 One thing it does well out of the box is a stupid row-by-row re-insert from one SQLAlchemy target engine to another. This means you can make changes to your SQLAlchemy schema as you please, then to port your data you create another database and do a row-by-row re-insert from the old dataset into the new. You can even provide a conversion function that will transform the data when necessary.
 
-Here are the usage docs:
+## Usage
 
     Usage: grate COMMAND [ARGS ...]
 
@@ -47,3 +47,61 @@ Here are the usage docs:
                             Example: model.metadata:MetaData
         --convert=FN        (Optional) Convert function to run data through.
                             Example: migration.v1:convert
+
+
+## Function examples
+
+### convert
+
+When migrating, you can provide a conversion function to funnel data through. Here's what one could look like:
+
+    # migration/v1.py:
+
+    def convert(table, row):
+        """
+        :param table: SQLAlchemy table schema object.
+        :param row: Current row from the given table (immutable, must make a copy to change).
+
+        Returns a dict with column:value mappings.
+        """
+        if table.name == 'user':
+            row = dict(row)
+            row['email'] = row['email'].lower()
+        elif table.name == 'job':
+            row = dict(row)
+            del row['useless_column']
+
+        return row
+
+Then we would use this function with ``--convert=migration.v1:convert``. There's pretty obvious performance detriment from using this feature, namely having to run each row through a function with its own logic, but with small datasets it's not too bad and too convenient to ignore.
+
+
+### upgrade
+
+When performing an upgrade command, you can do in-place changes without a full re-insert. This is a more realistic alternative to larger datasets or small schema changes.
+
+    # migration/001_change_fancy_column.py:
+
+    def upgrade(metadata):
+        """
+        :param metadata: SQLAlchemy MetaData bound to an engine and autoreflected.
+        """
+        fancy_table = metadata.tables['fancy_table']
+
+        # TODO: Code a real example here
+        # ... Do stuff with fancy_table
+
+        metadata.bind.execute(...)
+
+    def downgrade(metadata):
+        # TODO: Same idea, but backwards!
+        pass
+
+And now we can upgrade and downgrade our schema, for example:
+
+    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:upgrade
+    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:downgrade
+
+Maybe this should be called something other than ``upgrade``? Perhaps ``grade``? Anyways...
+
+# ISN'T THIS GRATE?
