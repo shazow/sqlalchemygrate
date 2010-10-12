@@ -134,7 +134,7 @@ If you're not doing a full re-insert, this is about as efficient as you can get 
 
 * You can email me at andrey.petrov@shazow.net
 * Tweet me at [@shazow](http://twitter.com/shazow)
-* [Open an issue](http://github.com/shazow/sqlalchemygrate/issues) or make a forks are welcome too. :D
+* [Open an issue](http://github.com/shazow/sqlalchemygrate/issues) or make a forks. :D
 
 
 # TODO
