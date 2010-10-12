@@ -2,9 +2,21 @@
 """
 Really silly schema migration framework, built for SQLAlchemy.
 
-Example:
-        %prog "mysql://foo:bar@localhost/baz" "sqlite:///:memory:" \\
-                   --metadata model.meta:metadata --verbose
+Commands:
+    migrate ENGINE_FROM ENGINE_TO
+        Migrate schema or data from one engine to another.
+
+    upgrade ENGINE UPGRADE_FN
+        Perform in-place upgrade of a schema in an engine.
+
+Examples:
+    %prog migrate "mysql://foo:bar@localhost/baz" "sqlite:///:memory:" \\
+        --metadata model.meta:metadata --verbose
+
+    %prog upgrade "mysql://foo:bar@localhost/baz" migration.001_change_fancy_column:upgrade
+
+Hint: The upgrade command can also be used to downgrade, just point it
+to the relevant downgrade function.
 """
 import sqlalchemy
 import sys
@@ -15,7 +27,7 @@ from sqlalchemygrate import migrations
 import logging
 log = logging.getLogger(__name__)
 
-from optparse import OptionParser
+from optparse import OptionParser, OptionGroup
 
 
 def import_module(path):
@@ -26,22 +38,27 @@ def import_module(path):
 
 
 def main():
-    usage="%prog ENGINE_FROM ENGINE_TO\n" + __doc__
+    usage="%prog COMMAND [ARGS ...]\n" + __doc__
 
     # FIXME: Use argparse someday
     parser = OptionParser(usage)
-    parser.add_option("--metadata", dest="metadata", help="MetaData object to use which contains the target model definition. Example: model.metadata:MetaData")
-    parser.add_option("--convert", dest="convert", help="(Optional) Convert function to run data through. Example: migration.v1:convert")
-    parser.add_option("--only-tables", dest="only_tables", help="Only perform migration on the given tables (comma-separated).")
-    parser.add_option("--skip-tables", dest="skip_tables", help="Skip migration on the given tables (comma-separated).")
-    parser.add_option("--limit", dest="limit", default=100000, help="Limit of rows to select per insert loop.")
+    parser.add_option("--only-tables", dest="only_tables", metavar="TABLES", help="Only perform migration on the given tables. (comma-separated table names)")
+    parser.add_option("--skip-tables", dest="skip_tables", metavar="TABLES", help="Skip migration on the given tables. (comma-separated table names)")
+    parser.add_option("--limit", dest="limit", default=100000, help="Number to select per insert loop. (default: %default)")
     parser.add_option("--verbose", "-v", dest="verbose", action="count", help="Enable verbose output. Use twice to enable debug output.")
     parser.add_option("--show-sql", dest="show_sql", action="store_true", default=False, help="Echo SQLAlchemy queries.")
 
+    migrate_group = OptionGroup(parser, "migrate")
+    migrate_group.add_option("--metadata", dest="metadata", help="MetaData object bound to the target schema definition. Example: model.metadata:MetaData")
+    migrate_group.add_option("--convert", dest="convert", metavar="FN", help="(Optional) Convert function to run data through. Example: migration.v1:convert")
+    parser.add_option_group(migrate_group)
+
     options, args = parser.parse_args()
 
-    if len(args) < 2:
-        parser.error("Need to specify two engines.")
+    if not args:
+        parser.error("Must specify a command.")
+
+    command = args[0].lower()
 
     if options.verbose > 1:
         log.setLevel(logging.DEBUG)
@@ -56,19 +73,31 @@ def main():
     if options.skip_tables:
         skip_tables = [t.strip() for t in options.skip_tables.split(',')]
 
-    metadata = import_module(options.metadata)
+    if command == 'migrate':
+        if len(args) < 3:
+            parser.error("Need to specify two engines.")
 
-    convert = None
-    if options.convert:
-        convert = import_module(options.convert)
+        metadata = import_module(options.metadata)
 
-    e1 = sqlalchemy.create_engine(args[0])
-    e2 = sqlalchemy.create_engine(args[1], echo=options.show_sql)
+        convert_fn = None
+        if options.convert:
+            convert_fn = import_module(options.convert)
 
-    now = time.time()
-    migrations.migrate(e1, e2, metadata=metadata, convert_fn=convert, only_tables=only_tables, skip_tables=skip_tables, limit=options.limit)
-    log.info("Done in {0:.2f}s".format(time.time()-now))
+        e1 = sqlalchemy.create_engine(args[1])
+        e2 = sqlalchemy.create_engine(args[2], echo=options.show_sql)
 
+        now = time.time()
+        migrations.migrate(e1, e2, metadata=metadata, convert_fn=convert_fn, only_tables=only_tables, skip_tables=skip_tables, limit=options.limit)
+        log.info("Done in {0:.2f}s".format(time.time()-now))
+    elif command == 'upgrade':
+        if len(args) < 3:
+            parser.error("Need to specify an engine and an upgrade function.")
+
+        upgrade_fn = import_module(args[2])
+
+        e = sqlalchemy.create_engine(args[1], echo=options.show_sql)
+
+        migrations.upgrade(e, upgrade_fn)
 
 if __name__ == '__main__':
     log_handler = logging.StreamHandler()
