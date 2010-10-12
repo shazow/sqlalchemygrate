@@ -102,7 +102,8 @@ When performing an upgrade command, you can do in-place changes without a full r
         metadata.bind.execute(...)
 
         # Need to do a row-by-row re-insert? Use the table_migrate helper
-        table_migrate(e1, e1, table, renamed_table, convert_fn=my_fn, limit=100000)
+        # We do a migration from one engine to the same engine, but between two different tables this time.
+        table_migrate(metadata.bind, metadata.bind, table, renamed_table, convert_fn=None, limit=100000)
 
     def downgrade(metadata):
         # TODO: Same idea, but backwards!
