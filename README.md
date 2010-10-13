@@ -116,8 +116,8 @@ This feature becomes *even more powerful* if you combine it with [sqlalchemy-mig
 
 And now we can upgrade and downgrade our schema, for example:
 
-    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:upgrade
-    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:downgrade
+    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:upgrade --show-sql
+    grate upgrade "sqlite:///development.db" migration.001_change_fancy_column:downgrade --shoq-sql
 
 Maybe this should be called something other than ``upgrade``? Perhaps ``grade``? Anyways...
 
