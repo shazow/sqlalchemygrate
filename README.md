@@ -82,7 +82,7 @@ Then we would use this function with ``--convert=migration.v1:convert``. There's
 
 When performing an upgrade command, you can do in-place changes without a full re-insert. This is a more realistic alternative to larger datasets or small schema changes.
 
-    # migration/001_change_fancy_column.py:
+    # migration/001_add_fancy_column.py:
 
     from sqlalchemy import *
     from migrate import * # sqlalchemy-migrate lets us do dialect-agnostic schema changes
@@ -96,18 +96,21 @@ When performing an upgrade command, you can do in-place changes without a full r
         """
         fancy_table = metadata.tables['fancy_table']
 
-        # TODO: Code a real example here
-        # ... Do stuff with fancy_table
+        # Create column using sqlalchemy-migrate
+        col = Column('fancy_column', types.Integer)
+        col.create(fancy_table)
 
-        metadata.bind.execute(...)
+        ## Or run some arbitrary SQL
+        # metadata.bind.execute(...)
 
-        # Need to do a row-by-row re-insert? Use the table_migrate helper
-        # We do a migration from one engine to the same engine, but between two different tables this time.
-        table_migrate(metadata.bind, metadata.bind, table, renamed_table, convert_fn=None, limit=100000)
+        ## Need to do a row-by-row re-insert? Use the table_migrate helper
+        ## We do a migration from one engine to the same engine, but between two different tables this time.
+        # table_migrate(metadata.bind, metadata.bind, table, renamed_table, convert_fn=None, limit=100000)
 
     def downgrade(metadata):
-        # TODO: Same idea, but backwards!
-        pass
+        fancy_table = metadata.tables['fancy_table']
+        fancy_table.c.fancy_column.drop()
+
 
 This feature becomes *even more powerful* if you combine it with [sqlalchemy-migrate](http://packages.python.org/sqlalchemy-migrate/). This way you can use dialect-agnostic SQLAlchemy DDLs to generate your schema changes, but without having to depend on sqlalchemy-migrate's revision tracking and other needless complexities which drove me to write this.
 
