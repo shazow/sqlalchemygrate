@@ -2,7 +2,7 @@
 SQLAlchemyGrate SQLAlcheMygrate SQLAlcheMyGrate
 ===============================================
 
-This is my silly (yet effective) migration framework built on `SQLAlchemy <http://sqlalchemy.org>`_—the best database abstraction library in the universe. Grate doesn't do fancy things like track schema versions and do step-through upgrade/downgrade paths or testing. Buuut, you can create a wrapper around it to do all these things using the ``upgrade`` command.
+This is my silly (yet effective) migration framework built on `SQLAlchemy <http://sqlalchemy.org>`_ — the best database abstraction library in the universe. Grate doesn't do fancy things like track schema versions and do step-through upgrade/downgrade paths or testing. Buuut, you can create a wrapper around it to do all these things using the ``upgrade`` command.
 
 One thing grate does well out of the box is a stupid row-by-row re-insert from one SQLAlchemy target engine to another. This means you can make changes to your SQLAlchemy schema as you please, then to port your data you create another database and do a row-by-row re-insert from the old dataset into the new. You can even provide a conversion function that will transform the data when necessary.
 
