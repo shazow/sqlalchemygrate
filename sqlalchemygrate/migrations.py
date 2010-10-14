@@ -11,7 +11,11 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
 
     log.debug("Inserting {0} rows into: {1}".format(count, table.name))
     for offset in xrange(0, count, limit):
-        data = e1.execute(table.select().offset(offset).limit(limit)).fetchall()
+        q = e1.execute(table.select().offset(offset).limit(limit))
+
+        # TODO: Add optimization here for the scenario where e1==e2 and convert_fn==None.
+
+        data = q.fetchall()
         if not data:
                continue
 
@@ -20,6 +24,30 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
 
         e2.execute(table2.insert(), data)
         log.debug("-> Inserted {0} rows into: {1}".format(len(data), table2.name))
+
+
+def table_replace(table_old, table_new, select_query=None, backup_table_name=None):
+    """
+    :param table_old: Original table object.
+    :param table_new: New table object which will be renamed to use table_old.name.
+    :param select_query: Custom query to use when porting data between tables. If None, do plain select everything.
+    :param backup_table_name: If None, leave no backup. Otherwise save the original table with that name.
+    """
+    raise Exception("table_replace is not functional yet. See comments inside.")
+    import migrate # This helper requires sqlalchemy-migrate
+
+    name_old = table_old.name
+    name_new = table_new.name
+
+    table_new.create(checkfirst=True)
+    table_new.insert().values(table_old.select()) # FIXME: This does not work. `migrate` does this somehow, steal it and hack it in.
+    if backup_table_name:
+        table_old.rename(backup_table_name)
+    else:
+        table_old.drop()
+
+    table_new.rename(name_old)
+
 
 
 def migrate(e1, e2, metadata, convert_fn=None, only_tables=None, skip_tables=None, limit=100000):

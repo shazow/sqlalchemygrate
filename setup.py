@@ -8,7 +8,7 @@ except ImportError:
     from setuptools import setup, find_packages
 
 
-long_description = open('README').read()
+long_description = open('README.rst').read()
 
 setup(
     name = "sqlalchemygrate",
