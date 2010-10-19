@@ -101,6 +101,10 @@ def main():
 
         migrations.upgrade(e, upgrade_fn)
 
+    else:
+        parser.error("Unrecognized command: {0}".format(command))
+
+
 if __name__ == '__main__':
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(logging.Formatter('%(levelname)-8s %(message)s'))
