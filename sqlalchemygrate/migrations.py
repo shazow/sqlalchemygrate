@@ -59,6 +59,8 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
 
 def table_replace(table_old, table_new, select_query=None, backup_table_name=None, defaults=None):
     """
+    This method is extremely hacky, use at your own risk.
+
     :param table_old: Original table object.
     :param table_new: New table object which will be renamed to use table_old.name.
     :param select_query: Custom query to use when porting data between tables. If None, do plain select everything.
@@ -70,26 +72,25 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
 
     select_query = select_query or table_old.select()
 
-    table_new_noidx = table_new.tometadata(table_new.metadata)
-    indexes = table_new_noidx.indexes
-    table_new_noidx.indexes = set([])
+    indexes = table_new.indexes
+    table_new.indexes = set([])
 
-    if table_new_noidx.name == name_old:
+    if table_new.name == name_old:
         # Make sure the names aren't colliding
-        table_new_noidx.name += "_gratetmp"
-
-    table_new_noidx.create(checkfirst=True)
-    table_new_noidx.bind.execute(InsertFromSelect(table_new, select_query, defaults))
+        table_new.name += "_gratetmp"
 
     for idx in table_old.indexes:
         idx.drop()
+
+    table_new.create(checkfirst=True)
+    table_new.bind.execute(InsertFromSelect(table_new, select_query, defaults))
 
     if backup_table_name:
         table_old.rename(backup_table_name)
     else:
         table_old.drop()
 
-    table_new_noidx.rename(name_old)
+    table_new.rename(name_old)
     for idx in indexes:
         idx.create()
 
