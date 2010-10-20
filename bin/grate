@@ -9,11 +9,17 @@ Commands:
     upgrade ENGINE UPGRADE_FN
         Perform in-place upgrade of a schema in an engine.
 
+    replace ENGINE
+        Similar to migrate but does in-database table insert-select and rename-swap.
+
 Examples:
     %prog migrate "mysql://foo:bar@localhost/baz" "sqlite:///:memory:" \\
         --metadata model.meta:metadata --verbose
 
     %prog upgrade "mysql://foo:bar@localhost/baz" migration.001_change_fancy_column:upgrade
+
+    %prog replace "mysql://foo:bar@localhost/baz" --metadata model.meta:metadata \\
+        --only-tables "user"
 
 Hint: The upgrade command can also be used to downgrade, just point it
 to the relevant downgrade function. For extra awesomeness, use schema-altering
@@ -91,15 +97,27 @@ def main():
         now = time.time()
         migrations.migrate(e1, e2, metadata=metadata, convert_fn=convert_fn, only_tables=only_tables, skip_tables=skip_tables, limit=options.limit)
         log.info("Done in {0:.2f}s".format(time.time()-now))
+
     elif command == 'upgrade':
         if len(args) < 3:
             parser.error("Need to specify an engine and an upgrade function.")
 
         upgrade_fn = import_module(args[2])
-
         e = sqlalchemy.create_engine(args[1], echo=options.show_sql)
 
         migrations.upgrade(e, upgrade_fn)
+
+    elif command == 'replace':
+
+        if len(args) < 2:
+            parser.error("Need to specify two engines.")
+
+        metadata = import_module(options.metadata)
+        e = sqlalchemy.create_engine(args[1], echo=options.show_sql)
+
+        now = time.time()
+        migrations.migrate_replace(e, metadata=metadata, only_tables=only_tables, skip_tables=skip_tables)
+        log.info("Done in {0:.2f}s".format(time.time()-now))
 
     else:
         parser.error("Unrecognized command: {0}".format(command))
