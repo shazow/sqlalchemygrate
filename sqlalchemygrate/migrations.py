@@ -70,19 +70,28 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
 
     select_query = select_query or table_old.select()
 
-    if table_new.name == name_old:
-        # Make sure the names aren't colliding
-        table_new.name += "_gratetmp"
-        table_new.fullname += "_gratetmp"
+    table_new_noidx = table_new.tometadata(table_new.metadata)
+    indexes = table_new_noidx.indexes
+    table_new_noidx.indexes = set([])
 
-    table_new.create(checkfirst=True)
-    table_new.bind.execute(InsertFromSelect(table_new, select_query, defaults))
+    if table_new_noidx.name == name_old:
+        # Make sure the names aren't colliding
+        table_new_noidx.name += "_gratetmp"
+
+    table_new_noidx.create(checkfirst=True)
+    table_new_noidx.bind.execute(InsertFromSelect(table_new, select_query, defaults))
+
+    for idx in table_old.indexes:
+        idx.drop()
+
     if backup_table_name:
         table_old.rename(backup_table_name)
     else:
         table_old.drop()
 
-    table_new.rename(name_old)
+    table_new_noidx.rename(name_old)
+    for idx in indexes:
+        idx.create()
 
 
 def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
