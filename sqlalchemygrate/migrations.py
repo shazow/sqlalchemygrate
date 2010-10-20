@@ -73,7 +73,7 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
     if table_new.name == name_old:
         # Make sure the names aren't colliding
         table_new.name += "_gratetmp"
-        target_new.fullname += "_gratetmp"
+        table_new.fullname += "_gratetmp"
 
     table_new.create(checkfirst=True)
     table_new.bind.execute(InsertFromSelect(table_new, select_query, defaults))
