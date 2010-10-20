@@ -75,10 +75,11 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
     indexes = table_new.indexes
     table_new.indexes = set([])
 
+    # Make sure the names aren't colliding
     if table_new.name == name_old:
-        # Make sure the names aren't colliding
         table_new.name += "_gratetmp"
 
+    # Drop all the indices to avoid having to rename them with sensible names
     for idx in table_old.indexes:
         idx.drop()
 
@@ -90,6 +91,7 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
     else:
         table_old.drop()
 
+    # Swap the table and readd all the indices
     table_new.rename(name_old)
     for idx in indexes:
         idx.create()
