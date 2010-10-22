@@ -69,6 +69,8 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
     import migrate # This helper requires sqlalchemy-migrate
 
     name_old = table_old.name
+    con = table_new.bind.connect()
+    t = con.begin()
 
     select_query = select_query or table_old.select()
 
@@ -84,7 +86,8 @@ def table_replace(table_old, table_new, select_query=None, backup_table_name=Non
         idx.drop()
 
     table_new.create(checkfirst=True)
-    table_new.bind.execute(InsertFromSelect(table_new, select_query, defaults))
+    con.execute(InsertFromSelect(table_new, select_query, defaults))
+    t.commit()
 
     if backup_table_name:
         table_old.rename(backup_table_name)
