@@ -64,7 +64,7 @@ def main():
     migrate_group = OptionGroup(parser, "migrate")
     migrate_group.add_option("--only-tables", dest="only_tables", metavar="TABLES", help="Only perform migration on the given tables. (comma-separated table names)")
     migrate_group.add_option("--skip-tables", dest="skip_tables", metavar="TABLES", help="Skip migration on the given tables. (comma-separated table names)")
-    migrate_group.add_option("--limit", dest="limit", default=100000, help="Number to select per insert loop. (default: %default)")
+    migrate_group.add_option("--limit", dest="limit", type="int", default=100000, help="Number to select per insert loop. (default: %default)")
     migrate_group.add_option("--convert", dest="convert", metavar="FN", help="(Optional) Convert function to run data through. Example: migration.v1:convert")
     parser.add_option_group(migrate_group)
 
