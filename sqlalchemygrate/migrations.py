@@ -42,9 +42,8 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
 
     log.debug("Inserting {0} rows into: {1}".format(count, table.name))
     for offset in xrange(0, count, limit):
+        # FIXME: There's an off-by-one bug here.
         q = e1.execute(table.select().offset(offset).limit(limit))
-
-        # TODO: Add optimization here for the scenario where e1==e2 and convert_fn==None.
 
         data = q.fetchall()
         if not data:
@@ -123,9 +122,11 @@ def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
 
 
 
-def migrate(e1, e2, metadata, convert_fn=None, only_tables=None, skip_tables=None, limit=100000):
+def migrate(e1, e2, metadata, convert_map=None, only_tables=None, skip_tables=None, limit=100000):
     metadata.bind = e1
     metadata.create_all(bind=e2)
+
+    convert_map = convert_map or {}
 
     for table_name, table in metadata.tables.items():
         if (only_tables and table_name not in only_tables) or \
@@ -134,6 +135,7 @@ def migrate(e1, e2, metadata, convert_fn=None, only_tables=None, skip_tables=Non
             continue
 
         log.info("Migrating table: {0}".format(table_name))
+        convert_fn = convert_map.get(table_name)
         table_migrate(e1, e2, table, convert_fn=convert_fn, limit=limit)
 
 

@@ -65,7 +65,7 @@ def main():
     migrate_group.add_option("--only-tables", dest="only_tables", metavar="TABLES", help="Only perform migration on the given tables. (comma-separated table names)")
     migrate_group.add_option("--skip-tables", dest="skip_tables", metavar="TABLES", help="Skip migration on the given tables. (comma-separated table names)")
     migrate_group.add_option("--limit", dest="limit", type="int", default=100000, help="Number to select per insert loop. (default: %default)")
-    migrate_group.add_option("--convert", dest="convert", metavar="FN", help="(Optional) Convert function to run data through. Example: migration.v1:convert")
+    migrate_group.add_option("--convert-map", dest="convert_map", metavar="DICT", help="(Optional) Convert table_name:function mapping to run data through. Example: migration.v1:convert")
     parser.add_option_group(migrate_group)
 
     options, args = parser.parse_args()
@@ -103,15 +103,15 @@ def main():
         if len(args) < 4:
             parser.error("Need to specify two engines.")
 
-        convert_fn = None
-        if options.convert:
-            convert_fn = import_module(options.convert)
+        convert_map = {}
+        if options.convert_map:
+            convert_map = import_module(options.convert_map)
 
         e1 = sqlalchemy.create_engine(args[2])
         e2 = sqlalchemy.create_engine(args[3], echo=options.show_sql)
 
         now = time.time()
-        migrations.migrate(e1, e2, metadata=obj, convert_fn=convert_fn, only_tables=only_tables, skip_tables=skip_tables, limit=options.limit)
+        migrations.migrate(e1, e2, metadata=obj, convert_map=convert_map, only_tables=only_tables, skip_tables=skip_tables, limit=options.limit)
         log.info("Done in {0:.2f}s".format(time.time()-now))
 
     elif command == 'upgrade':
