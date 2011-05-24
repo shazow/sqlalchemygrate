@@ -35,14 +35,16 @@ def visit_insert_from_select(element, compiler, **kw):
 
 
 
+
 def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
-    table2 = table2 or table
+    if table2 is None:
+        table2 = table
 
     count = e1.execute(table.count()).scalar()
 
     log.debug("Inserting {0} rows into: {1}".format(count, table.name))
     for offset in xrange(0, count, limit):
-        # FIXME: There's an off-by-one bug here.
+        # FIXME: There's an off-by-one bug here?
         q = e1.execute(table.select().offset(offset).limit(limit))
 
         data = q.fetchall()
@@ -52,7 +54,7 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
         if convert_fn:
             data = [convert_fn(table, row) for row in data]
 
-        e2.execute(table2.insert(), data)
+        e2.execute(table2.insert(), data).close()
         log.debug("-> Inserted {0} rows into: {1}".format(len(data), table2.name))
 
 
@@ -123,20 +125,36 @@ def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
 
 
 def migrate(e1, e2, metadata, convert_map=None, only_tables=None, skip_tables=None, limit=100000):
-    metadata.bind = e1
+    """
+    :param e1: Source engine (schema reflected)
+    :param e2: Target engine (schema generated from ``metadata``)
+    :param metadata: MetaData containing target desired schema.
+    """
+
+    old_metadata = sqlalchemy.MetaData(bind=e1, reflect=True)
+
+    metadata.bind = e2
     metadata.create_all(bind=e2)
 
     convert_map = convert_map or {}
 
-    for table_name, table in metadata.tables.items():
+    for table_name, table in old_metadata.tables.items():
         if (only_tables and table_name not in only_tables) or \
            (skip_tables and table_name in skip_tables):
             log.info("Skipping table: {0}".format(table_name))
             continue
 
         log.info("Migrating table: {0}".format(table_name))
-        convert_fn = convert_map.get(table_name)
-        table_migrate(e1, e2, table, convert_fn=convert_fn, limit=limit)
+
+        convert = convert_map.get(table_name)
+        if not convert:
+            new_table = metadata.tables.get(table_name)
+            table_migrate(e1, e2, table, limit=limit)
+            return
+
+        for new_table_name, convert_fn in convert:
+            new_table = metadata.tables.get(new_table_name)
+            table_migrate(e1, e2, table, new_table, convert_fn=convert_fn, limit=limit)
 
 
 def upgrade(e, upgrade_fn):
