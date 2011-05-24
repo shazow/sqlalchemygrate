@@ -108,10 +108,10 @@ def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
     :param metadata: MetaData containing target desired schema
     """
 
-    old_metadata = sqlalchemy.MetaData(bind=e, reflect=True)
+    metadata_old = sqlalchemy.MetaData(bind=e, reflect=True)
     metadata.bind = e
 
-    for table_name, table in old_metadata.tables.items():
+    for table_name, table in metadata_old.tables.items():
         if (only_tables and table_name not in only_tables) or \
            (skip_tables and table_name in skip_tables):
             log.info("Skipping table: {0}".format(table_name))
@@ -124,21 +124,25 @@ def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
 
 
 
-def migrate(e1, e2, metadata, convert_map=None, only_tables=None, skip_tables=None, limit=100000):
+def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=None, skip_tables=None, limit=100000):
     """
     :param e1: Source engine (schema reflected)
     :param e2: Target engine (schema generated from ``metadata``)
     :param metadata: MetaData containing target desired schema.
     """
 
-    old_metadata = sqlalchemy.MetaData(bind=e1, reflect=True)
+    metadata_old = sqlalchemy.MetaData(bind=e1, reflect=True)
 
     metadata.bind = e2
     metadata.create_all(bind=e2)
 
     convert_map = convert_map or {}
 
-    for table_name, table in old_metadata.tables.items():
+    if callable(populate_fn):
+        log.info("Running populate function.")
+        populate_fn(metadata_from=metadata_old, metadata_to=metadata)
+
+    for table_name, table in metadata_old.tables.items():
         if (only_tables and table_name not in only_tables) or \
            (skip_tables and table_name in skip_tables):
             log.info("Skipping table: {0}".format(table_name))
