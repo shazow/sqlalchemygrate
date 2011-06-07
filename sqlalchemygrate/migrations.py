@@ -136,6 +136,10 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
     metadata.bind = e2
     metadata.create_all(bind=e2)
 
+    # We create a new metadata which isn't tarnished by fancy columns of the given metadata.
+    # FIXME: Should convert functions be getting new_metadata too?
+    metadata_new = sqlalchemy.MetaData(bind=e2, reflect=True)
+
     convert_map = convert_map or {}
 
     if callable(populate_fn):
@@ -153,7 +157,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
 
         convert = convert_map.get(table_name)
         if not convert:
-            new_table = metadata.tables.get(table_name)
+            new_table = metadata_new.tables.get(table_name)
             if new_table is None:
                 log.info("No corresponding table found, skipping: {0}".format(table_name))
                 continue
