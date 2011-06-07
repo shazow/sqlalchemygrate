@@ -155,7 +155,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
             new_table = metadata.tables.get(table_name)
             if not new_table:
                 log.info("No corresponding table found, skipping: {0}".format(table_name))
-                return
+                continue
             table_migrate(e1, e2, table, new_table, limit=limit)
 
         for new_table_name, convert_fn in convert:
