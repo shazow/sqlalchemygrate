@@ -113,7 +113,7 @@ def main():
             convert_map = import_module(options.convert_map)
 
         populate_fn = None
-        if options.convert_map:
+        if options.populate_fn:
             populate_fn = import_module(options.populate_fn)
 
         e1 = sqlalchemy.create_engine(args[2])
