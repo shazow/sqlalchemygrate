@@ -146,7 +146,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
         log.info("Running populate function.")
         populate_fn(metadata_from=metadata_old, metadata_to=metadata)
 
-    for table in metadata_old.sorted_tables:
+    for table in metadata.sorted_tables:
         table_name = table.name
         if (only_tables and table_name not in only_tables) or \
            (skip_tables and table_name in skip_tables):
