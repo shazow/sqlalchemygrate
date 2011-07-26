@@ -48,9 +48,9 @@ from optparse import OptionParser, OptionGroup
 
 def import_module(path):
     # FIXME: There's a builtin for this in Python 2.7
-    module, obj = path.split(':', 1)
-    o = __import__(module, fromlist=[obj])
-    return getattr(o, obj)
+    modname, objname = path.split(':', 1)
+    obj = __import__(modname, fromlist=[objname])
+    return reduce(getattr, objname.split('.'), obj)
 
 
 def main():
