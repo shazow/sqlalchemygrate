@@ -53,7 +53,7 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
         if convert_fn:
             r = []
             for row in data:
-                converted = convert_fn(table, row)
+                converted = convert_fn(row, old_table=table, new_table=table2)
                 if isinstance(converted, types.GeneratorType):
                     r += list(converted)
                 else:
@@ -130,17 +130,18 @@ def migrate_replace(e, metadata, only_tables=None, skip_tables=None):
 
 
 
-def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=None, skip_tables=None, limit=100000):
+def migrate(e1, e2, metadata=None, convert_map=None, populate_fn=None, only_tables=None, skip_tables=None, limit=100000):
     """
     :param e1: Source engine (schema reflected)
     :param e2: Target engine (schema generated from ``metadata``)
-    :param metadata: MetaData containing target desired schema.
+    :param metadata: MetaData containing target desired schema which will be created.
     """
 
     metadata_old = sqlalchemy.MetaData(bind=e1, reflect=True)
 
-    metadata.bind = e2
-    metadata.create_all(bind=e2)
+    if metadata:
+        metadata.bind = e2
+        metadata.create_all(bind=e2)
 
     # We create a new metadata which isn't tarnished by fancy columns of the given metadata.
     # FIXME: Should convert functions be getting new_metadata too?
@@ -150,7 +151,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
 
     if callable(populate_fn):
         log.info("Running populate function.")
-        populate_fn(metadata_from=metadata_old, metadata_to=metadata)
+        populate_fn(metadata_from=metadata_old, metadata_to=metadata_new)
 
     for table in metadata_old.sorted_tables:
         table_name = table.name
