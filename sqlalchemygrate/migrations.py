@@ -1,5 +1,6 @@
 import sqlalchemy
 
+import types
 import logging
 log = logging.getLogger(__name__)
 
@@ -34,15 +35,13 @@ def visit_insert_from_select(element, compiler, **kw):
 ##
 
 
-
-
 def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
     if table2 is None:
         table2 = table
 
     count = e1.execute(table.count()).scalar()
 
-    log.debug("Inserting {0} rows into: {1}".format(count, table.name))
+    log.debug("Inserting {0} rows into: {1}".format(count, table2.name))
     for offset in xrange(0, count, limit):
         # FIXME: There's an off-by-one bug here?
         q = e1.execute(table.select().offset(offset).limit(limit))
@@ -52,7 +51,14 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
                continue
 
         if convert_fn:
-            data = [convert_fn(table, row) for row in data]
+            r = []
+            for row in data:
+                converted = convert_fn(table, row)
+                if isinstance(converted, types.GeneratorType):
+                    r += list(converted)
+                else:
+                    r.append(converted)
+            data = r
 
         e2.execute(table2.insert(), data).close()
         log.debug("-> Inserted {0} rows into: {1}".format(len(data), table2.name))
@@ -146,7 +152,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
         log.info("Running populate function.")
         populate_fn(metadata_from=metadata_old, metadata_to=metadata)
 
-    for table in metadata.sorted_tables:
+    for table in metadata_old.sorted_tables:
         table_name = table.name
         if (only_tables and table_name not in only_tables) or \
            (skip_tables and table_name in skip_tables):
@@ -166,7 +172,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
             continue
 
         for new_table_name, convert_fn in convert:
-            new_table = metadata.tables.get(new_table_name)
+            new_table = metadata_new.tables.get(new_table_name)
             table_migrate(e1, e2, table, new_table, convert_fn=convert_fn, limit=limit)
 
 
