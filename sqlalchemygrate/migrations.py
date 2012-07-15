@@ -53,14 +53,15 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
         if convert_fn:
             r = []
             for row in data:
-                converted = convert_fn(table, row)
+                converted = convert_fn(row=row, old_table=table, new_table=table2)
                 if isinstance(converted, types.GeneratorType):
                     r += list(converted)
-                else:
+                elif converted is not None:
                     r.append(converted)
             data = r
 
-        e2.execute(table2.insert(), data).close()
+        if data:
+            e2.execute(table2.insert(), data).close()
         log.debug("-> Inserted {0} rows into: {1}".format(len(data), table2.name))
 
 
@@ -150,7 +151,7 @@ def migrate(e1, e2, metadata, convert_map=None, populate_fn=None, only_tables=No
 
     if callable(populate_fn):
         log.info("Running populate function.")
-        populate_fn(metadata_from=metadata_old, metadata_to=metadata)
+        populate_fn(metadata_from=metadata_old, metadata_to=metadata_new)
 
     for table in metadata_old.sorted_tables:
         table_name = table.name
