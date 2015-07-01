@@ -12,7 +12,7 @@ long_description = open('README.rst').read()
 
 setup(
     name = "sqlalchemygrate",
-    version = "0.2",
+    version = "0.3",
     packages = find_packages(exclude=["migrate.tests*"]),
     include_package_data = True,
     description = "Silly (but effective) database schema and data migration framework using SQLAlchemy.",
