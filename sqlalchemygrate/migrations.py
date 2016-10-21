@@ -42,7 +42,7 @@ def table_migrate(e1, e2, table, table2=None, convert_fn=None, limit=100000):
     count = e1.execute(table.count()).scalar()
 
     log.debug("Inserting {0} rows into: {1}".format(count, table2.name))
-    for offset in xrange(0, count, limit):
+    for offset in range(0, count, limit):
         # FIXME: There's an off-by-one bug here?
         q = e1.execute(table.select().offset(offset).limit(limit))
 
