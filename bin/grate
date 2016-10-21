@@ -35,7 +35,10 @@ to the relevant downgrade function. For extra awesomeness, use schema-altering
 DDLs provided by sqlalchemy-migrate.
 """
 import sqlalchemy
+import os
 import sys
+sys.path.insert(0, os.getcwd())
+
 import time
 
 from sqlalchemygrate import migrations
@@ -50,7 +53,9 @@ def import_module(path):
     # FIXME: There's a builtin for this in Python 2.7
     modname, objname = path.split(':', 1)
     obj = __import__(modname, fromlist=[objname])
-    return reduce(getattr, objname.split('.'), obj)
+    for sub_obj in objname.split('.'):
+        obj = getattr(obj, sub_obj)
+    return obj
 
 
 def main():
