@@ -35,7 +35,10 @@ to the relevant downgrade function. For extra awesomeness, use schema-altering
 DDLs provided by sqlalchemy-migrate.
 """
 import sqlalchemy
+import os
 import sys
+sys.path.insert(0, os.getcwd())
+
 import time
 
 from sqlalchemygrate import migrations
